@@ -21,7 +21,6 @@ const ball = {
     vy: -4,
     color: "#ffffff"
 };
-
 const blockConf = {
     row: 4,
     col: 8,
@@ -44,7 +43,6 @@ function initGrid() {
 }
 function setLevel(lvl) {
     currentLevel = lvl;
-
     levelButtons.forEach(btn => {
         let bLvl = parseInt(btn.getAttribute("data-level"));
         if (bLvl === lvl) {
@@ -56,11 +54,13 @@ function setLevel(lvl) {
         }
     });
     blockConf.row = 2 + lvl;
-    let speed = 3 + lvl;
+    let speed = 3 + lvl * 1.2;
+    bar.w = Math.max(60, 110 - lvl * 8);
     ball.vx = ball.vx > 0 ? speed : -speed;
     ball.vy = -speed;
     resetPositions();
     initGrid();
+    gameStarted = false;
 }
 function resetPositions() {
     bar.x = canvas.width / 2 - bar.w / 2;
@@ -92,7 +92,7 @@ function drawBall() {
     ctx.closePath();
 }
 function drawBlocks() {
-    const colors = ["#e74c3c", "#e67e22", "#f1c40f", "#2ecc71", "#9b59b6", "#34495e"];
+    const colors = ["#e74c3c", "#e67e22", "#f1c40f", "#2ecc71", "#9b59b6", "#34495e", "#1abc9c", "#e84393"];
     for (let i = 0; i < blockConf.col; i++) {
         for (let j = 0; j < blockConf.row; j++) {
             if (grid[i][j] && grid[i][j].show === 1) {
@@ -151,6 +151,7 @@ function update() {
     breakBlocks();
     if (ball.y - ball.r > canvas.height) {
         resetPositions();
+        initGrid();
         gameStarted = false;
     }
 }
@@ -163,5 +164,6 @@ function gameLoop() {
     update();
     requestAnimationFrame(gameLoop);
 }
+
 setLevel(1);
 gameLoop();
