@@ -5,9 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ping Pong</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="style.scss">
 </head>
 <body>
+<div id="mainContainer">
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+    <div id="sidebar">
+        <div style="display: flex; gap: 10px;">
+            <button id="playBtn">Chơi</button>
+            <button id="pauseBtn">Tạm dừng</button>
+        </div>
+        <h3>Level</h3>
+        <div id="levelGroup">
+            <button class="lvl-btn" data-level="1">Lv1</button>
+            <button class="lvl-btn" data-level="2">Lv2</button>
+            <button class="lvl-btn" data-level="3">Lv3</button>
+            <button class="lvl-btn" data-level="4">Lv4</button>
+            <button class="lvl-btn" data-level="5">Lv5</button>
+            <button class="lvl-btn" data-level="6">Lv6</button>
+        </div>
+    </div>
+</div>
+
 <script src="pingpong.js"></script>
 </body>
 </html>
