@@ -1,169 +1,222 @@
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+const gameArea = document.getElementById("gameArea");
+const ballElement = document.getElementById("ball");
+const barElement = document.getElementById("bar");
+const blockArea = document.getElementById("blockArea");
 const playBtn = document.getElementById("playBtn");
 const pauseBtn = document.getElementById("pauseBtn");
 const levelButtons = document.querySelectorAll(".lvl-btn");
-let currentLevel = 1;
-let isPaused = false;
 let gameStarted = false;
-const bar = {
-    w: 100,
-    h: 15,
-    x: canvas.width / 2 - 50,
-    y: canvas.height - 30,
-    color: "#f4f5f8"
+let isPaused = false;
+let blocks = [];
+let bar = {
+    x: 350,
+    y: 470,
+    width: 100,
+    height: 15
 };
-const ball = {
-    x: canvas.width / 2,
-    y: canvas.height - 50,
-    r: 8,
-    vx: 4,
-    vy: -4,
-    color: "#ffffff"
+let ball = {
+    x: 400,
+    y: 450,
+    radius: 8,
+    speedX: 4,
+    speedY: -4
 };
-const blockConf = {
-    row: 4,
-    col: 8,
-    w: 80,
-    h: 20,
-    gap: 10,
-    offTop: 40,
-    offLeft: 40
-};
-
-let grid = [];
-function initGrid() {
-    grid = [];
-    for (let i = 0; i < blockConf.col; i++) {
-        grid[i] = [];
-        for (let j = 0; j < blockConf.row; j++) {
-            grid[i][j] = { x: 0, y: 0, show: 1 };
+let blockRow = 3;
+let blockCol = 8;
+let blockWidth = 80;
+let blockHeight = 20;
+let blockGap = 10;
+const colors = [
+    "#e74c3c",
+    "#e67e22",
+    "#f1c40f",
+    "#2ecc71",
+    "#9b59b6",
+    "#34495e",
+    "#1abc9c",
+    "#e84393"
+];
+function createBlocks() {
+    blockArea.innerHTML = "";
+    blocks = [];
+    for (let row = 0; row < blockRow; row++) {
+        for (let col = 0; col < blockCol; col++) {
+            let x = 40 + col * (blockWidth + blockGap);
+            let y = 40 + row * (blockHeight + blockGap);
+            let block = document.createElement("div");
+            block.className = "block";
+            block.style.left = x + "px";
+            block.style.top = y + "px";
+            block.style.backgroundColor = colors[row];
+            blockArea.appendChild(block);
+            blocks.push({
+                x: x,
+                y: y,
+                visible: true,
+                element: block
+            });
         }
     }
 }
-function setLevel(lvl) {
-    currentLevel = lvl;
-    levelButtons.forEach(btn => {
-        let bLvl = parseInt(btn.getAttribute("data-level"));
-        if (bLvl === lvl) {
-            btn.style.background = "#007bff";
-            btn.style.borderColor = "#007bff";
+function chooseLevel(level) {
+    if (level === 1) {
+        blockRow = 3;
+        ball.speedX = 4;
+        ball.speedY = -4;
+        bar.width = 100;
+    } else if (level === 2) {
+        blockRow = 4;
+        ball.speedX = 5;
+        ball.speedY = -5;
+        bar.width = 95;
+    } else if (level === 3) {
+        blockRow = 5;
+        ball.speedX = 6;
+        ball.speedY = -6;
+        bar.width = 90;
+    } else if (level === 4) {
+        blockRow = 6;
+        ball.speedX = 7;
+        ball.speedY = -7;
+        bar.width = 80;
+    } else if (level === 5) {
+        blockRow = 7;
+        ball.speedX = 8;
+        ball.speedY = -8;
+        bar.width = 70;
+    } else if (level === 6) {
+        blockRow = 8;
+        ball.speedX = 9;
+        ball.speedY = -9;
+        bar.width = 60;
+    }
+    for (let i = 0; i < levelButtons.length; i++) {
+        let buttonLevel = Number(levelButtons[i].getAttribute("data-level"));
+        if (buttonLevel === level) {
+            levelButtons[i].style.backgroundColor = "#007bff";
+            levelButtons[i].style.borderColor = "#007bff";
         } else {
-            btn.style.background = "#333";
-            btn.style.borderColor = "#555";
+            levelButtons[i].style.backgroundColor = "#333";
+            levelButtons[i].style.borderColor = "#555";
         }
-    });
-    blockConf.row = 2 + lvl;
-    let speed = 3 + lvl * 1.2;
-    bar.w = Math.max(60, 110 - lvl * 8);
-    ball.vx = ball.vx > 0 ? speed : -speed;
-    ball.vy = -speed;
-    resetPositions();
-    initGrid();
+    }
+    resetGame();
+    createBlocks();
     gameStarted = false;
-}
-function resetPositions() {
-    bar.x = canvas.width / 2 - bar.w / 2;
-    ball.x = canvas.width / 2;
-    ball.y = canvas.height - 50;
-}
-playBtn.addEventListener("click", function() {
     isPaused = false;
-    gameStarted = true;
-});
-pauseBtn.addEventListener("click", function() {
-    isPaused = true;
-});
-levelButtons.forEach(btn => {
-    btn.addEventListener("click", function() {
-        let lvl = parseInt(this.getAttribute("data-level"));
-        setLevel(lvl);
-    });
-});
-function drawPaddle() {
-    ctx.fillStyle = bar.color;
-    ctx.fillRect(bar.x, bar.y, bar.w, bar.h);
+    showGame();
 }
-function drawBall() {
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
-    ctx.fillStyle = ball.color;
-    ctx.fill();
-    ctx.closePath();
+function resetGame() {
+    bar.x = gameArea.clientWidth / 2 - bar.width / 2;
+    bar.y = gameArea.clientHeight - 30;
+    ball.x = gameArea.clientWidth / 2;
+    ball.y = gameArea.clientHeight - 50;
 }
-function drawBlocks() {
-    const colors = ["#e74c3c", "#e67e22", "#f1c40f", "#2ecc71", "#9b59b6", "#34495e", "#1abc9c", "#e84393"];
-    for (let i = 0; i < blockConf.col; i++) {
-        for (let j = 0; j < blockConf.row; j++) {
-            if (grid[i][j] && grid[i][j].show === 1) {
-                let bx = i * (blockConf.w + blockConf.gap) + blockConf.offLeft;
-                let by = j * (blockConf.h + blockConf.gap) + blockConf.offTop;
-                grid[i][j].x = bx;
-                grid[i][j].y = by;
-                ctx.fillStyle = colors[j % colors.length];
-                ctx.fillRect(bx, by, blockConf.w, blockConf.h);
+function showGame() {
+    barElement.style.width = bar.width + "px";
+    barElement.style.height = bar.height + "px";
+    barElement.style.left = bar.x + "px";
+    barElement.style.top = bar.y + "px";
+    ballElement.style.left = ball.x - ball.radius + "px";
+    ballElement.style.top = ball.y - ball.radius + "px";
+}
+function checkBlockCollision() {
+    for (let i = 0; i < blocks.length; i++) {
+        let block = blocks[i];
+        if (block.visible === true) {
+            let left = block.x;
+            let right = block.x + blockWidth;
+            let top = block.y;
+            let bottom = block.y + blockHeight;
+            if (
+                ball.x >= left &&
+                ball.x <= right &&
+                ball.y >= top &&
+                ball.y <= bottom
+            ) {
+                ball.speedY = -ball.speedY;
+                block.visible = false;
+                block.element.style.display = "none";
+                break;
             }
         }
     }
 }
-function breakBlocks() {
-    for (let i = 0; i < blockConf.col; i++) {
-        for (let j = 0; j < blockConf.row; j++) {
-            let item = grid[i][j];
-            if (item && item.show === 1) {
-                if (
-                    ball.x > item.x &&
-                    ball.x < item.x + blockConf.w &&
-                    ball.y > item.y &&
-                    ball.y < item.y + blockConf.h
-                ) {
-                    ball.vy = -ball.vy;
-                    item.show = 0;
-                }
-            }
-        }
+function checkWallCollision() {
+    if (ball.x + ball.radius >= gameArea.clientWidth) {
+        ball.speedX = -ball.speedX;
+    }
+    if (ball.x - ball.radius <= 0) {
+        ball.speedX = -ball.speedX;
+    }
+    if (ball.y - ball.radius <= 0) {
+        ball.speedY = -ball.speedY;
     }
 }
-canvas.addEventListener("mousemove", function(e) {
-    if (isPaused) return;
-    let rect = canvas.getBoundingClientRect();
-    let mX = e.clientX - rect.left;
-    bar.x = mX - bar.w / 2;
-});
-function update() {
-    if (isPaused || !gameStarted) return;
-    ball.x += ball.vx;
-    ball.y += ball.vy;
-    if (ball.x + ball.r > canvas.width || ball.x - ball.r < 0) {
-        ball.vx = -ball.vx;
-    }
-    if (ball.y - ball.r < 0) {
-        ball.vy = -ball.vy;
-    }
+function checkBarCollision() {
+    let ballBottom = ball.y + ball.radius;
+    let barRight = bar.x + bar.width;
     if (
-        ball.y + ball.r >= bar.y &&
+        ballBottom >= bar.y &&
+        ballBottom <= bar.y + bar.height &&
         ball.x >= bar.x &&
-        ball.x <= bar.x + bar.w &&
-        ball.vy > 0
+        ball.x <= barRight &&
+        ball.speedY > 0
     ) {
-        ball.vy = -ball.vy;
+        ball.speedY = -ball.speedY;
     }
-    breakBlocks();
-    if (ball.y - ball.r > canvas.height) {
-        resetPositions();
-        initGrid();
+}
+function updateGame() {
+    if (gameStarted === false) {
+        return;
+    }
+    if (isPaused === true) {
+        return;
+    }
+    ball.x = ball.x + ball.speedX;
+    ball.y = ball.y + ball.speedY;
+    checkWallCollision();
+    checkBarCollision();
+    checkBlockCollision();
+    if (ball.y - ball.radius > gameArea.clientHeight) {
+        resetGame();
+        createBlocks();
         gameStarted = false;
     }
 }
 function gameLoop() {
-    ctx.fillStyle = "#151212";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    drawBlocks();
-    drawPaddle();
-    drawBall();
-    update();
+    updateGame();
+    showGame();
     requestAnimationFrame(gameLoop);
 }
+playBtn.addEventListener("click", function() {
+    gameStarted = true;
+    isPaused = false;
+});
 
-setLevel(1);
+pauseBtn.addEventListener("click", function() {
+    isPaused = true;
+});
+for (let i = 0; i < levelButtons.length; i++) {
+    levelButtons[i].addEventListener("click", function() {
+        let level = Number(this.getAttribute("data-level"));
+
+        chooseLevel(level);
+    });
+}
+gameArea.addEventListener("mousemove", function(event) {
+    if (isPaused === true) {
+        return;
+    }
+    let gamePosition = gameArea.getBoundingClientRect();
+    let mouseX = event.clientX - gamePosition.left;
+    bar.x = mouseX - bar.width / 2;
+    if (bar.x < 0) {
+        bar.x = 0;
+    }
+    if (bar.x + bar.width > gameArea.clientWidth) {
+        bar.x = gameArea.clientWidth - bar.width;
+    }
+});
+chooseLevel(1);
 gameLoop();

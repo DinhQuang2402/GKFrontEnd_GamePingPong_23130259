@@ -1,55 +1,92 @@
-$bg-color: #f4f1f1;
-$panel-bg: #1e1e1e;
-$primary-color: #007bff;
-$text-color: #ffffff;
-
+$background: whitesmoke;
+$panel: gray;
+$gameBackground: black;
+$textColor: white;
+$buttonColor: darkslategray;
+$buttonHover: dimgray;
+$buttonBorder: gray;
+$activeColor: dodgerblue;
+* {
+  box-sizing: border-box;
+}
 body {
-  background-color: $bg-color;
-  color: $text-color;
   margin: 0;
   min-height: 100vh;
+  background-color: $background;
+  color: $textColor;
+  font-family: Arial, sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: Arial, sans-serif;
 }
 #mainContainer {
   display: flex;
   gap: 20px;
-  align-items: flex-start;
-  justify-content: center;
   padding: 20px;
-  background-color: $panel-bg;
+  background-color: $panel;
 }
-#gameCanvas {
-  background-color: #151212;
+#gameArea {
+  width: 800px;
+  height: 500px;
+  background-color: $gameBackground;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
 }
-
+#blockArea {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.block {
+  width: 80px;
+  height: 20px;
+  position: absolute;
+}
+#ball {
+  width: 16px;
+  height: 16px;
+  background-color: white;
+  position: absolute;
+}
+#bar {
+  width: 100px;
+  height: 15px;
+  background-color: white;
+  position: absolute;
+}
 #sidebar {
+  width: 180px;
   display: flex;
   flex-direction: column;
   gap: 15px;
-  width: 180px;
   h3 {
-    color: $text-color;
+    color: white;
     margin: 10px 0 0 0;
     font-size: 16px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
   }
   button {
     padding: 10px;
     cursor: pointer;
-    background-color: #333;
-    color: $text-color;
+    background-color: $buttonColor;
+    color: white;
+    border: 1px solid $buttonBorder;
     font-weight: bold;
-    transition: all 0.2s ease;
     &:hover {
-      background-color: #333
+      background-color: $buttonHover;
     }
     &:active {
-      transform: scale(0.98);
+      background-color: $activeColor;
     }
+  }
+}
+#controlGroup {
+  display: flex;
+  gap: 10px;
+  button {
+    flex: 1;
   }
 }
 #levelGroup {
