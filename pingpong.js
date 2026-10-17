@@ -7,6 +7,7 @@ const pauseBtn = document.getElementById("pauseBtn");
 const levelButtons = document.querySelectorAll(".lvl-btn");
 let gameStarted = false;
 let isPaused = false;
+let currentLevel = 1;
 let blocks = [];
 let bar = {
     x: 350,
@@ -18,30 +19,32 @@ let ball = {
     x: 400,
     y: 450,
     radius: 8,
-    speedX: 4,
-    speedY: -4
+    speedX: 2,
+    speedY: -2
 };
-let blockRow = 3;
-let blockCol = 8;
+let blockRow = 2;
+let blockCol = 6;
 let blockWidth = 80;
 let blockHeight = 20;
 let blockGap = 10;
 const colors = [
-    "#e74c3c",
-    "#e67e22",
-    "#f1c40f",
-    "#2ecc71",
-    "#9b59b6",
-    "#34495e",
-    "#1abc9c",
-    "#e84393"
+    "red",
+    "orange",
+    "yellow",
+    "green",
+    "purple",
+    "gray",
+    "cyan",
+    "pink"
 ];
 function createBlocks() {
     blockArea.innerHTML = "";
     blocks = [];
+    let totalWidth = blockCol * blockWidth + (blockCol - 1) * blockGap;
+    let startX = (gameArea.clientWidth - totalWidth) / 2;
     for (let row = 0; row < blockRow; row++) {
         for (let col = 0; col < blockCol; col++) {
-            let x = 40 + col * (blockWidth + blockGap);
+            let x = startX + col * (blockWidth + blockGap);
             let y = 40 + row * (blockHeight + blockGap);
             let block = document.createElement("div");
             block.className = "block";
@@ -59,45 +62,53 @@ function createBlocks() {
     }
 }
 function chooseLevel(level) {
+    currentLevel = level;
     if (level === 1) {
+        blockRow = 2;
+        blockCol = 6;
+        ball.speedX = 3;
+        ball.speedY = -3;
+        bar.width = 110;
+    } else if (level === 2) {
         blockRow = 3;
+        blockCol = 6;
+        ball.speedX = 3;
+        ball.speedY = -3;
+        bar.width = 105;
+    } else if (level === 3) {
+        blockRow = 4;
+        blockCol = 7;
         ball.speedX = 4;
         ball.speedY = -4;
-        bar.width = 100;
-    } else if (level === 2) {
-        blockRow = 4;
+        bar.width = 95;
+    } else if (level === 4) {
+        blockRow = 5;
+        blockCol = 7;
         ball.speedX = 5;
         ball.speedY = -5;
-        bar.width = 95;
-    } else if (level === 3) {
-        blockRow = 5;
+        bar.width = 85;
+    } else if (level === 5) {
+        blockRow = 6;
+        blockCol = 8;
         ball.speedX = 6;
         ball.speedY = -6;
-        bar.width = 90;
-    } else if (level === 4) {
-        blockRow = 6;
+        bar.width = 75;
+    } else if (level === 6) {
+        blockRow = 7;
+        blockCol = 8;
         ball.speedX = 7;
         ball.speedY = -7;
-        bar.width = 80;
-    } else if (level === 5) {
-        blockRow = 7;
-        ball.speedX = 8;
-        ball.speedY = -8;
-        bar.width = 70;
-    } else if (level === 6) {
-        blockRow = 8;
-        ball.speedX = 9;
-        ball.speedY = -9;
-        bar.width = 60;
+        bar.width = 65;
     }
     for (let i = 0; i < levelButtons.length; i++) {
         let buttonLevel = Number(levelButtons[i].getAttribute("data-level"));
+
         if (buttonLevel === level) {
-            levelButtons[i].style.backgroundColor = "#007bff";
-            levelButtons[i].style.borderColor = "#007bff";
+            levelButtons[i].style.backgroundColor = "dodgerblue";
+            levelButtons[i].style.borderColor = "dodgerblue";
         } else {
-            levelButtons[i].style.backgroundColor = "#333";
-            levelButtons[i].style.borderColor = "#555";
+            levelButtons[i].style.backgroundColor = "dimgray";
+            levelButtons[i].style.borderColor = "gray";
         }
     }
     resetGame();
@@ -111,12 +122,16 @@ function resetGame() {
     bar.y = gameArea.clientHeight - 30;
     ball.x = gameArea.clientWidth / 2;
     ball.y = gameArea.clientHeight - 50;
+    if (ball.speedY > 0) {
+        ball.speedY = -ball.speedY;
+    }
 }
 function showGame() {
     barElement.style.width = bar.width + "px";
     barElement.style.height = bar.height + "px";
     barElement.style.left = bar.x + "px";
     barElement.style.top = bar.y + "px";
+
     ballElement.style.left = ball.x - ball.radius + "px";
     ballElement.style.top = ball.y - ball.radius + "px";
 }
@@ -141,6 +156,35 @@ function checkBlockCollision() {
             }
         }
     }
+}
+function checkWin() {
+    let remainingBlocks = 0;
+
+    for (let i = 0; i < blocks.length; i++) {
+        if (blocks[i].visible === true) {
+            remainingBlocks++;
+        }
+    }
+    if (remainingBlocks === 0) {
+        gameStarted = false;
+
+        if (currentLevel < 6) {
+            let nextLevel = currentLevel + 1;
+            alert(
+                "Đã chiến thắng Level " +
+                currentLevel +
+                "! Qua Level " +
+                nextLevel
+            );
+            chooseLevel(nextLevel);
+        } else {
+            alert("Đã chiến thắng tất cả Level!");
+            resetGame();
+            showGame();
+        }
+        return true;
+    }
+    return false;
 }
 function checkWallCollision() {
     if (ball.x + ball.radius >= gameArea.clientWidth) {
@@ -178,6 +222,9 @@ function updateGame() {
     checkWallCollision();
     checkBarCollision();
     checkBlockCollision();
+    if (checkWin() === true) {
+        return;
+    }
     if (ball.y - ball.radius > gameArea.clientHeight) {
         resetGame();
         createBlocks();
@@ -190,6 +237,9 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 playBtn.addEventListener("click", function() {
+    if (ball.speedY > 0) {
+        ball.speedY = -ball.speedY;
+    }
     gameStarted = true;
     isPaused = false;
 });
@@ -205,6 +255,9 @@ for (let i = 0; i < levelButtons.length; i++) {
     });
 }
 gameArea.addEventListener("mousemove", function(event) {
+    if (gameStarted === false) {
+        return;
+    }
     if (isPaused === true) {
         return;
     }
