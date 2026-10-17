@@ -9,6 +9,7 @@ let gameStarted = false;
 let isPaused = false;
 let currentLevel = 1;
 let blocks = [];
+let gifts = [];
 let bar = {
     x: 350,
     y: 470,
@@ -102,7 +103,6 @@ function chooseLevel(level) {
     }
     for (let i = 0; i < levelButtons.length; i++) {
         let buttonLevel = Number(levelButtons[i].getAttribute("data-level"));
-
         if (buttonLevel === level) {
             levelButtons[i].style.backgroundColor = "dodgerblue";
             levelButtons[i].style.borderColor = "dodgerblue";
@@ -111,6 +111,7 @@ function chooseLevel(level) {
             levelButtons[i].style.borderColor = "gray";
         }
     }
+    clearGifts();
     resetGame();
     createBlocks();
     gameStarted = false;
@@ -131,9 +132,46 @@ function showGame() {
     barElement.style.height = bar.height + "px";
     barElement.style.left = bar.x + "px";
     barElement.style.top = bar.y + "px";
-
     ballElement.style.left = ball.x - ball.radius + "px";
     ballElement.style.top = ball.y - ball.radius + "px";
+    for (let i = 0; i < gifts.length; i++) {
+        gifts[i].element.style.left = gifts[i].x + "px";
+        gifts[i].element.style.top = gifts[i].y + "px";
+    }
+}
+function createGift(x, y) {
+    if (currentLevel < 2) {
+        return;
+    }
+    let random = Math.random();
+    if (random > 0.3) {
+        return;
+    }
+    let gift = document.createElement("div");
+    gift.className = "gift";
+    gift.innerText = "x2";
+    gameArea.appendChild(gift);
+    gifts.push({
+        x: x,
+        y: y,
+        speed: 2,
+        element: gift
+    });
+}
+function moveGifts() {
+    for (let i = gifts.length - 1; i >= 0; i--) {
+        gifts[i].y = gifts[i].y + gifts[i].speed;
+        if (gifts[i].y > gameArea.clientHeight) {
+            gifts[i].element.remove();
+            gifts.splice(i, 1);
+        }
+    }
+}
+function clearGifts() {
+    for (let i = 0; i < gifts.length; i++) {
+        gifts[i].element.remove();
+    }
+    gifts = [];
 }
 function checkBlockCollision() {
     for (let i = 0; i < blocks.length; i++) {
@@ -152,6 +190,7 @@ function checkBlockCollision() {
                 ball.speedY = -ball.speedY;
                 block.visible = false;
                 block.element.style.display = "none";
+                createGift(block.x + 20, block.y);
                 break;
             }
         }
@@ -159,7 +198,6 @@ function checkBlockCollision() {
 }
 function checkWin() {
     let remainingBlocks = 0;
-
     for (let i = 0; i < blocks.length; i++) {
         if (blocks[i].visible === true) {
             remainingBlocks++;
@@ -167,15 +205,10 @@ function checkWin() {
     }
     if (remainingBlocks === 0) {
         gameStarted = false;
-
+        clearGifts();
         if (currentLevel < 6) {
             let nextLevel = currentLevel + 1;
-            alert(
-                "Đã chiến thắng Level " +
-                currentLevel +
-                "! Qua Level " +
-                nextLevel
-            );
+            alert("Đã chiến thắng Level " + currentLevel + "! Qua Level " + nextLevel);
             chooseLevel(nextLevel);
         } else {
             alert("Đã chiến thắng tất cả Level!");
@@ -222,10 +255,12 @@ function updateGame() {
     checkWallCollision();
     checkBarCollision();
     checkBlockCollision();
+    moveGifts();
     if (checkWin() === true) {
         return;
     }
     if (ball.y - ball.radius > gameArea.clientHeight) {
+        clearGifts();
         resetGame();
         createBlocks();
         gameStarted = false;
@@ -243,14 +278,12 @@ playBtn.addEventListener("click", function() {
     gameStarted = true;
     isPaused = false;
 });
-
 pauseBtn.addEventListener("click", function() {
     isPaused = true;
 });
 for (let i = 0; i < levelButtons.length; i++) {
     levelButtons[i].addEventListener("click", function() {
         let level = Number(this.getAttribute("data-level"));
-
         chooseLevel(level);
     });
 }

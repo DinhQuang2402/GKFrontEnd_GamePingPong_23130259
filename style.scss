@@ -94,3 +94,14 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
+.gift {
+  width: 40px;
+  height: 25px;
+  position: absolute;
+  background-color: gold;
+  color: black;
+  font-weight: bold;
+  text-align: center;
+  line-height: 25px;
+  border: 1px solid orange;
+}
