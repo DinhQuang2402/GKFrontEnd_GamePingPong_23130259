@@ -1,7 +1,5 @@
-const gameArea = document.querySelector(".game");
-const ballElement = document.querySelector(".ball");
-const barElement = document.querySelector(".bar");
-const blockArea = document.querySelector(".block-area");
+const game = document.querySelector(".game");
+const ctx = game.getContext("2d");
 const playBtn = document.querySelector(".play-btn");
 const pauseBtn = document.querySelector(".pause-btn");
 const levelButtons = document.querySelectorAll(".lvl-btn");
@@ -9,99 +7,99 @@ const levelButtons = document.querySelectorAll(".lvl-btn");
 let gameStarted = false;
 let isPaused = false;
 let currentLevel = 1;
-
+let balls = [];
 let blocks = [];
 let gifts = [];
-let balls = [];
-
 let maxBalls = 18;
 let maxGifts = 2;
-
-let bar = {
-    x: 350,
-    y: 470,
-    width: 110,
-    height: 15
-};
-
 let ballSpeed = 2;
-
 let blockRow = 6;
 let blockCol = 14;
 let blockWidth = 50;
 let blockHeight = 20;
 let blockGap = 4;
-
 let blockMove = 0;
 let blockDirection = 1;
 let blockMoveSpeed = 0.5;
 
+let bar = {
+    x: 350,
+    y: 570,
+    width: 110,
+    height: 15
+};
+
 const colors = [
-    "red",
-    "orange",
-    "yellow",
-    "green",
-    "purple",
-    "gray",
-    "cyan",
-    "pink"
+    "red", "orange", "yellow", "green",
+    "purple", "gray", "cyan", "pink"
 ];
 
+function level4Path(row, col) {
+    if (row === 1 && (col === 5 || col === 6)) return true;
+    if (col === 5 && row >= 1 && row <= 4) return true;
+    if (row === 4 && col >= 3 && col <= 5) return true;
+    if (col === 3 && row >= 4 && row <= 6) return true;
+    if (row === 6 && col >= 3 && col <= 9) return true;
+    if (col === 9 && row >= 3 && row <= 6) return true;
+    if (row === 3 && col >= 8 && col <= 9) return true;
+
+    return false;
+}
+
 function createBlocks() {
-    blockArea.innerHTML = "";
     blocks = [];
 
-    let totalWidth = blockCol * blockWidth + (blockCol - 1) * blockGap;
-    let startX = (gameArea.clientWidth - totalWidth) / 2;
+    let rows = blockRow;
 
-    for (let row = 0; row < blockRow; row++) {
+    if (currentLevel === 4) {
+        rows = 9;
+    }
+
+    let totalWidth = blockCol * blockWidth + (blockCol - 1) * blockGap;
+    let startX = (game.width - totalWidth) / 2;
+
+    for (let row = 0; row < rows; row++) {
         for (let col = 0; col < blockCol; col++) {
+            if (currentLevel === 4 && level4Path(row, col)) {
+                continue;
+            }
+
             let x = startX + col * (blockWidth + blockGap);
             let y = 30 + row * (blockHeight + blockGap);
-            let block = document.createElement("div");
+            let hit = 1;
+
             let colorNumber = row;
 
             if (colorNumber >= colors.length) {
                 colorNumber = colorNumber - colors.length;
             }
 
-            block.className = "block";
-            block.style.left = x + "px";
-            block.style.top = y + "px";
-            block.style.backgroundColor = colors[colorNumber];
+            if (currentLevel === 4) {
+                let outside =
+                    row === 0 ||
+                    row === rows - 1 ||
+                    col === 0 ||
+                    col === blockCol - 1;
 
-            blockArea.appendChild(block);
+                if (outside) {
+                    hit = 1;
+                } else {
+                    if (Math.random() < 0.5) {
+                        hit = 2;
+                    } else {
+                        hit = 3;
+                    }
+                }
+            }
 
             blocks.push({
                 x: x,
                 y: y,
-                visible: true,
-                element: block
+                hit: hit,
+                color: colors[colorNumber],
+                visible: true
             });
         }
-    }
-}
-
-function moveBlocks() {
-    if (currentLevel !== 3) {
-        return;
-    }
-
-    let move = blockMoveSpeed * blockDirection;
-
-    blockMove = blockMove + move;
-
-    for (let i = 0; i < blocks.length; i++) {
-        blocks[i].x = blocks[i].x + move;
-        blocks[i].element.style.left = blocks[i].x + "px";
-    }
-
-    if (blockMove >= 20) {
-        blockDirection = -1;
-    }
-
-    if (blockMove <= -20) {
-        blockDirection = 1;
     }
 }
 
@@ -130,107 +128,71 @@ function chooseLevel(level) {
         blockRow = 10;
         ballSpeed = 4;
         bar.width = 75;
-    } else if (level === 6) {
-        blockRow = 11;
-        ballSpeed = 5;
-        bar.width = 65;
     }
 
     for (let i = 0; i < levelButtons.length; i++) {
-        let buttonLevel = Number(levelButtons[i].getAttribute("data-level"));
+        let levelNumber = Number(
+            levelButtons[i].getAttribute("data-level")
+        );
 
-        if (buttonLevel === level) {
+        if (levelNumber === level) {
             levelButtons[i].style.backgroundColor = "dodgerblue";
-            levelButtons[i].style.borderColor = "dodgerblue";
         } else {
             levelButtons[i].style.backgroundColor = "dimgray";
-            levelButtons[i].style.borderColor = "gray";
         }
     }
 
-    clearGifts();
-    resetGame();
+    gifts = [];
     createBlocks();
+    resetGame();
 
     gameStarted = false;
     isPaused = false;
 
-    showGame();
+    drawGame();
 }
 
 function resetGame() {
-    bar.x = gameArea.clientWidth / 2 - bar.width / 2;
-    bar.y = gameArea.clientHeight - 30;
-
-    resetBalls();
-}
-
-function resetBalls() {
-    for (let i = 0; i < balls.length; i++) {
-        if (balls[i].element !== ballElement) {
-            balls[i].element.remove();
-        }
-    }
+    bar.x = game.width / 2 - bar.width / 2;
+    bar.y = game.height - 30;
 
     balls = [];
 
-    ballElement.style.display = "block";
-
     balls.push({
-        x: gameArea.clientWidth / 2,
-        y: gameArea.clientHeight - 50,
+        x: game.width / 2,
+        y: game.height - 50,
         radius: 8,
         speedX: ballSpeed,
-        speedY: -ballSpeed,
-        element: ballElement
+        speedY: -ballSpeed
     });
 }
 
-function showGame() {
-    barElement.style.width = bar.width + "px";
-    barElement.style.height = bar.height + "px";
-    barElement.style.left = bar.x + "px";
-    barElement.style.top = bar.y + "px";
+function moveBlocks() {
+    if (currentLevel !== 3) return;
 
-    for (let i = 0; i < balls.length; i++) {
-        balls[i].element.style.left =
-            balls[i].x - balls[i].radius + "px";
+    blockMove += blockMoveSpeed * blockDirection;
 
-        balls[i].element.style.top =
-            balls[i].y - balls[i].radius + "px";
+    if (blockMove >= 20) {
+        blockMove = 20;
+        blockDirection = -1;
     }
 
-    for (let i = 0; i < gifts.length; i++) {
-        gifts[i].element.style.left = gifts[i].x + "px";
-        gifts[i].element.style.top = gifts[i].y + "px";
+    if (blockMove <= -20) {
+        blockMove = -20;
+        blockDirection = 1;
     }
 }
 
 function createGift(x, y) {
-    if (currentLevel < 2) {
-        return;
-    }
-
-    if (gifts.length >= maxGifts) {
-        return;
-    }
-
-    if (Math.random() > 0.1) {
-        return;
-    }
+    if (currentLevel < 2) return;
+    if (gifts.length >= maxGifts) return;
+    if (Math.random() > 0.1) return;
 
     let type = 2;
 
-    if (Math.random() >= 0.5) {
+    if (Math.random() > 0.5) {
         type = 3;
     }
-
-    let gift = document.createElement("div");
-
-    gift.className = "gift";
-    gift.innerText = "x" + type;
-
-    gameArea.appendChild(gift);
 
     gifts.push({
         x: x,
@@ -238,232 +200,195 @@ function createGift(x, y) {
         width: 40,
         height: 25,
         speed: 2,
-        type: type,
-        element: gift
+        type: type
     });
 }
 
-function moveGifts() {
-    let i = gifts.length - 1;
+function multiplyBalls(number) {
+    if (balls.length === 0) return;
 
-    while (i >= 0) {
-        let gift = gifts[i];
+    let oldCount = balls.length;
 
-        gift.y = gift.y + gift.speed;
+    for (let i = 0; i < oldCount; i++) {
+        if (balls.length >= maxBalls) return;
 
-        let giftBottom = gift.y + gift.height;
-        let giftRight = gift.x + gift.width;
-        let barRight = bar.x + bar.width;
+        let oldBall = balls[i];
+        let newX = oldBall.x - 15;
 
-        if (
-            giftBottom >= bar.y &&
-            gift.y <= bar.y + bar.height &&
-            giftRight >= bar.x &&
-            gift.x <= barRight
-        ) {
-            multiplyBalls(gift.type);
-
-            gift.element.remove();
-            gifts.splice(i, 1);
-        } else if (gift.y > gameArea.clientHeight) {
-            gift.element.remove();
-            gifts.splice(i, 1);
+        if (newX < 8) {
+            newX = 8;
         }
 
-        i--;
-    }
-}
+        balls.push({
+            x: newX,
+            y: oldBall.y - 10,
+            radius: 8,
+            speedX: -ballSpeed,
+            speedY: -ballSpeed
+        });
 
-function multiplyBalls(number) {
-    if (balls.length === 0 || balls.length >= maxBalls) {
-        return;
-    }
+        if (number === 3 && balls.length < maxBalls) {
+            newX = oldBall.x + 15;
 
-    let oldBalls = [];
-
-    for (let i = 0; i < balls.length; i++) {
-        oldBalls.push(balls[i]);
-    }
-
-    for (let i = 0; i < oldBalls.length; i++) {
-        let oldBall = oldBalls[i];
-
-        for (let j = 1; j < number; j++) {
-            if (balls.length >= maxBalls) {
-                return;
-            }
-
-            let newBallElement = document.createElement("div");
-
-            newBallElement.className = "ball";
-
-            gameArea.appendChild(newBallElement);
-
-            let newX = oldBall.x;
-            let newSpeedX = oldBall.speedX;
-
-            if (j === 1) {
-                newX = newX - 15;
-
-                if (newSpeedX > 0) {
-                    newSpeedX = -newSpeedX;
-                }
-            } else {
-                newX = newX + 15;
-
-                if (newSpeedX < 0) {
-                    newSpeedX = -newSpeedX;
-                }
-            }
-
-            if (newX < 10) {
-                newX = 10;
-            }
-
-            if (newX > gameArea.clientWidth - 10) {
-                newX = gameArea.clientWidth - 10;
+            if (newX > game.width - 8) {
+                newX = game.width - 8;
             }
 
             balls.push({
                 x: newX,
                 y: oldBall.y - 10,
                 radius: 8,
-                speedX: newSpeedX,
-                speedY: -ballSpeed,
-                element: newBallElement
+                speedX: ballSpeed,
+                speedY: -ballSpeed
             });
         }
     }
 }
 
-function clearGifts() {
-    for (let i = 0; i < gifts.length; i++) {
-        gifts[i].element.remove();
-    }
+function moveGifts() {
+    for (let i = gifts.length - 1; i >= 0; i--) {
+        let gift = gifts[i];
 
-    gifts = [];
-}
+        gift.y += gift.speed;
 
-function checkBlockCollision(ball) {
-    for (let i = 0; i < blocks.length; i++) {
-        let block = blocks[i];
+        let giftRight = gift.x + gift.width;
+        let giftBottom = gift.y + gift.height;
+        let barRight = bar.x + bar.width;
+        let barBottom = bar.y + bar.height;
 
-        if (block.visible === true) {
-            let left = block.x;
-            let right = block.x + blockWidth;
-            let top = block.y;
-            let bottom = block.y + blockHeight;
-
-            if (
-                ball.x >= left &&
-                ball.x <= right &&
-                ball.y >= top &&
-                ball.y <= bottom
-            ) {
-                ball.speedY = -ball.speedY;
-
-                block.visible = false;
-                block.element.style.display = "none";
-
-                createGift(block.x + 5, block.y);
-
-                break;
-            }
+        if (
+            giftBottom >= bar.y &&
+            gift.y <= barBottom &&
+            giftRight >= bar.x &&
+            gift.x <= barRight
+        ) {
+            multiplyBalls(gift.type);
+            gifts.splice(i, 1);
+        } else if (gift.y > game.height) {
+            gifts.splice(i, 1);
         }
     }
 }
 
-function checkWallCollision(ball) {
-    if (
-        ball.x + ball.radius >= gameArea.clientWidth &&
-        ball.speedX > 0
-    ) {
+function checkWall(ball) {
+    if (ball.x + ball.radius >= game.width && ball.speedX > 0) {
+        ball.x = game.width - ball.radius;
         ball.speedX = -ball.speedX;
     }
 
-    if (
-        ball.x - ball.radius <= 0 &&
-        ball.speedX < 0
-    ) {
+    if (ball.x - ball.radius <= 0 && ball.speedX < 0) {
+        ball.x = ball.radius;
         ball.speedX = -ball.speedX;
     }
 
-    if (
-        ball.y - ball.radius <= 0 &&
-        ball.speedY < 0
-    ) {
+    if (ball.y - ball.radius <= 0 && ball.speedY < 0) {
+        ball.y = ball.radius;
         ball.speedY = -ball.speedY;
     }
 }
 
-function checkBarCollision(ball) {
+function checkBar(ball) {
+    let ballLeft = ball.x - ball.radius;
+    let ballRight = ball.x + ball.radius;
     let ballBottom = ball.y + ball.radius;
     let barRight = bar.x + bar.width;
 
     if (
         ballBottom >= bar.y &&
-        ballBottom <= bar.y + bar.height &&
-        ball.x >= bar.x &&
-        ball.x <= barRight &&
+        ball.y <= bar.y + bar.height &&
+        ballRight >= bar.x &&
+        ballLeft <= barRight &&
         ball.speedY > 0
     ) {
-        ball.speedY = -ball.speedY;
         ball.y = bar.y - ball.radius;
+        ball.speedY = -ball.speedY;
+    }
+}
+
+function checkBlock(ball) {
+    for (let i = 0; i < blocks.length; i++) {
+        let block = blocks[i];
+
+        if (block.visible === false) {
+            continue;
+        }
+
+        let x = block.x;
+
+        if (currentLevel === 3) {
+            x += blockMove;
+        }
+
+        let ballLeft = ball.x - ball.radius;
+        let ballRight = ball.x + ball.radius;
+        let ballTop = ball.y - ball.radius;
+        let ballBottom = ball.y + ball.radius;
+
+        let blockRight = x + blockWidth;
+        let blockBottom = block.y + blockHeight;
+
+        if (
+            ballRight >= x &&
+            ballLeft <= blockRight &&
+            ballBottom >= block.y &&
+            ballTop <= blockBottom
+        ) {
+            ball.speedY = -ball.speedY;
+            block.hit--;
+
+            if (block.hit <= 0) {
+                block.visible = false;
+                createGift(x + 5, block.y);
+            }
+
+            break;
+        }
     }
 }
 
 function moveBalls() {
-    let i = balls.length - 1;
-
-    while (i >= 0) {
+    for (let i = balls.length - 1; i >= 0; i--) {
         let ball = balls[i];
 
-        ball.x = ball.x + ball.speedX;
-        ball.y = ball.y + ball.speedY;
+        ball.x += ball.speedX;
+        ball.y += ball.speedY;
 
-        checkWallCollision(ball);
-        checkBarCollision(ball);
-        checkBlockCollision(ball);
+        checkWall(ball);
+        checkBar(ball);
+        checkBlock(ball);
 
-        if (ball.y - ball.radius > gameArea.clientHeight) {
-            if (ball.element === ballElement) {
-                ball.element.style.display = "none";
-            } else {
-                ball.element.remove();
-            }
-
+        if (ball.y - ball.radius > game.height) {
             balls.splice(i, 1);
         }
-
-        i--;
     }
 
     if (balls.length === 0) {
-        clearGifts();
-        resetGame();
+        gifts = [];
+        blockMove = 0;
+        blockDirection = 1;
+
         createBlocks();
+        resetGame();
 
         gameStarted = false;
     }
 }
 
 function checkWin() {
-    let remainingBlocks = 0;
+    let remaining = 0;
 
     for (let i = 0; i < blocks.length; i++) {
         if (blocks[i].visible === true) {
-            remainingBlocks++;
+            remaining++;
         }
     }
 
-    if (remainingBlocks !== 0) {
-        return false;
-    }
+    if (remaining > 0) return;
 
     gameStarted = false;
-    clearGifts();
+    gifts = [];
 
-    if (currentLevel < 6) {
+    if (currentLevel < 5) {
         let nextLevel = currentLevel + 1;
 
         alert(
@@ -477,39 +402,142 @@ function checkWin() {
     } else {
         alert("Đã chiến thắng tất cả Level!");
 
-        resetGame();
         createBlocks();
-        showGame();
+        resetGame();
     }
-
-    return true;
 }
 
-function updateGame() {
-    if (gameStarted === false || isPaused === true) {
-        return;
-    }
+function drawBlocks() {
+    ctx.font = "bold 13px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
-    moveBlocks();
-    moveBalls();
-    moveGifts();
-    checkWin();
+    for (let i = 0; i < blocks.length; i++) {
+        let block = blocks[i];
+
+        if (block.visible === false) {
+            continue;
+        }
+
+        let x = block.x;
+
+        if (currentLevel === 3) {
+            x += blockMove;
+        }
+
+        if (currentLevel === 4) {
+            if (block.hit === 1) {
+                ctx.fillStyle = "lightgray";
+            } else if (block.hit === 2) {
+                ctx.fillStyle = "gold";
+            } else {
+                ctx.fillStyle = "firebrick";
+            }
+        } else {
+            ctx.fillStyle = block.color;
+        }
+
+        ctx.fillRect(
+            x,
+            block.y,
+            blockWidth,
+            blockHeight
+        );
+
+        if (currentLevel === 4) {
+            if (block.hit === 3) {
+                ctx.fillStyle = "white";
+            } else {
+                ctx.fillStyle = "black";
+            }
+
+            ctx.fillText(
+                "x" + block.hit,
+                x + blockWidth / 2,
+                block.y + blockHeight / 2
+            );
+        }
+    }
+}
+
+function drawBalls() {
+    ctx.fillStyle = "white";
+
+    for (let i = 0; i < balls.length; i++) {
+        let ball = balls[i];
+
+        ctx.fillRect(
+            ball.x - ball.radius,
+            ball.y - ball.radius,
+            ball.radius * 2,
+            ball.radius * 2
+        );
+    }
+}
+
+function drawBar() {
+    ctx.fillStyle = "white";
+
+    ctx.fillRect(
+        bar.x,
+        bar.y,
+        bar.width,
+        bar.height
+    );
+}
+
+function drawGifts() {
+    ctx.font = "bold 14px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    for (let i = 0; i < gifts.length; i++) {
+        let gift = gifts[i];
+
+        ctx.fillStyle = "gold";
+
+        ctx.fillRect(
+            gift.x,
+            gift.y,
+            gift.width,
+            gift.height
+        );
+
+        ctx.fillStyle = "black";
+
+        ctx.fillText(
+            "x" + gift.type,
+            gift.x + gift.width / 2,
+            gift.y + gift.height / 2
+        );
+    }
+}
+
+function drawGame() {
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, game.width, game.height);
+
+    drawBlocks();
+    drawGifts();
+    drawBalls();
+    drawBar();
 }
 
 function gameLoop() {
-    updateGame();
-    showGame();
+    if (gameStarted === true && isPaused === false) {
+        moveBlocks();
+        moveBalls();
+        moveGifts();
+        checkWin();
+    }
 
+    drawGame();
     requestAnimationFrame(gameLoop);
 }
 
 function startGame() {
-    if (gameStarted === false) {
-        gameStarted = true;
-        isPaused = false;
-    } else if (isPaused === true) {
-        isPaused = false;
-    }
+    gameStarted = true;
+    isPaused = false;
 }
 
 playBtn.addEventListener("click", function() {
@@ -531,19 +559,21 @@ document.addEventListener("keydown", function(event) {
 
 for (let i = 0; i < levelButtons.length; i++) {
     levelButtons[i].addEventListener("click", function() {
-        let level = Number(this.getAttribute("data-level"));
+        let level = Number(
+            this.getAttribute("data-level")
+        );
 
         chooseLevel(level);
     });
 }
 
-gameArea.addEventListener("mousemove", function(event) {
+game.addEventListener("mousemove", function(event) {
     if (gameStarted === false || isPaused === true) {
         return;
     }
 
-    let gamePosition = gameArea.getBoundingClientRect();
-    let mouseX = event.clientX - gamePosition.left;
+    let position = game.getBoundingClientRect();
+    let mouseX = event.clientX - position.left;
 
     bar.x = mouseX - bar.width / 2;
 
@@ -551,8 +581,8 @@ gameArea.addEventListener("mousemove", function(event) {
         bar.x = 0;
     }
 
-    if (bar.x + bar.width > gameArea.clientWidth) {
-        bar.x = gameArea.clientWidth - bar.width;
+    if (bar.x + bar.width > game.width) {
+        bar.x = game.width - bar.width;
     }
 });
 
