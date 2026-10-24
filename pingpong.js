@@ -1,20 +1,18 @@
 const game = document.querySelector(".game");
-const ctx = game.getContext("2d");
-const playBtn = document.querySelector(".play-btn");
-const pauseBtn = document.querySelector(".pause-btn");
+const gameContext = game.getContext("2d");
+const playButton = document.querySelector(".play-btn");
 const levelButtons = document.querySelectorAll(".lvl-btn");
 
 let gameStarted = false;
-let isPaused = false;
 let currentLevel = 1;
 let balls = [];
 let blocks = [];
 let gifts = [];
-let maxBalls = 18;
-let maxGifts = 2;
+let maximumBalls = 18;
+let maximumGifts = 2;
 let ballSpeed = 2;
 let blockRow = 6;
-let blockCol = 14;
+let blockColumn = 14;
 let blockWidth = 50;
 let blockHeight = 20;
 let blockGap = 4;
@@ -34,6 +32,9 @@ const colors = [
     "purple", "gray", "cyan", "pink"
 ];
 
+/**
+ * Tạo các vị trí trống để làm đường đi cho Level 4.
+ */
 function level4Path(row, col) {
     if (row === 1 && (col === 5 || col === 6)) return true;
     if (col === 5 && row >= 1 && row <= 4) return true;
@@ -46,6 +47,9 @@ function level4Path(row, col) {
     return false;
 }
 
+/**
+ * Tạo gạch cho các level, Level 4 có gạch x1, x2, x3 và đường trống.
+ */
 function createBlocks() {
     blocks = [];
 
@@ -55,11 +59,11 @@ function createBlocks() {
         rows = 9;
     }
 
-    let totalWidth = blockCol * blockWidth + (blockCol - 1) * blockGap;
+    let totalWidth = blockColumn * blockWidth + (blockColumn - 1) * blockGap;
     let startX = (game.width - totalWidth) / 2;
 
     for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < blockCol; col++) {
+        for (let col = 0; col < blockColumn; col++) {
             if (currentLevel === 4 && level4Path(row, col)) {
                 continue;
             }
@@ -79,7 +83,7 @@ function createBlocks() {
                     row === 0 ||
                     row === rows - 1 ||
                     col === 0 ||
-                    col === blockCol - 1;
+                    col === blockColumn - 1;
 
                 if (outside) {
                     hit = 1;
@@ -103,6 +107,9 @@ function createBlocks() {
     }
 }
 
+/**
+ * Tạo hàng gạch, tốc độ bóng và độ rộng thanh đỡ cho Level 1 đến Level 5.
+ */
 function chooseLevel(level) {
     currentLevel = level;
     blockMove = 0;
@@ -147,11 +154,12 @@ function chooseLevel(level) {
     resetGame();
 
     gameStarted = false;
-    isPaused = false;
-
     drawGame();
 }
 
+/**
+ * Đưa bóng và thanh đỡ về vị trí ban đầu.
+ */
 function resetGame() {
     bar.x = game.width / 2 - bar.width / 2;
     bar.y = game.height - 30;
@@ -167,8 +175,13 @@ function resetGame() {
     });
 }
 
+/**
+ * LV3 các khối gạch di chuyển qua lại.
+ */
 function moveBlocks() {
-    if (currentLevel !== 3) return;
+    if (currentLevel !== 3) {
+        return;
+    }
 
     blockMove += blockMoveSpeed * blockDirection;
 
@@ -183,10 +196,21 @@ function moveBlocks() {
     }
 }
 
+/**
+ * Tạo quà x2 hoặc x3 từ Level 2 đến Level 5.
+ */
 function createGift(x, y) {
-    if (currentLevel < 2) return;
-    if (gifts.length >= maxGifts) return;
-    if (Math.random() > 0.1) return;
+    if (currentLevel < 2) {
+        return;
+    }
+
+    if (gifts.length >= maximumGifts) {
+        return;
+    }
+
+    if (Math.random() > 0.1) {
+        return;
+    }
 
     let type = 2;
 
@@ -204,13 +228,20 @@ function createGift(x, y) {
     });
 }
 
+/**
+ * Nhân số lượng bóng khi ăn quà x2 hoặc x3.
+ */
 function multiplyBalls(number) {
-    if (balls.length === 0) return;
+    if (balls.length === 0) {
+        return;
+    }
 
     let oldCount = balls.length;
 
     for (let i = 0; i < oldCount; i++) {
-        if (balls.length >= maxBalls) return;
+        if (balls.length >= maximumBalls) {
+            return;
+        }
 
         let oldBall = balls[i];
         let newX = oldBall.x - 15;
@@ -227,7 +258,7 @@ function multiplyBalls(number) {
             speedY: -ballSpeed
         });
 
-        if (number === 3 && balls.length < maxBalls) {
+        if (number === 3 && balls.length < maximumBalls) {
             newX = oldBall.x + 15;
 
             if (newX > game.width - 8) {
@@ -245,6 +276,9 @@ function multiplyBalls(number) {
     }
 }
 
+/**
+ * Qùa từ trên rơi xuống, xem thanh đỡ có ăn đc quà hay ko.
+ */
 function moveGifts() {
     for (let i = gifts.length - 1; i >= 0; i--) {
         let gift = gifts[i];
@@ -270,6 +304,9 @@ function moveGifts() {
     }
 }
 
+/**
+ * Kiểm tra bóng va chạm với tường trái, phải và phía trên.
+ */
 function checkWall(ball) {
     if (ball.x + ball.radius >= game.width && ball.speedX > 0) {
         ball.x = game.width - ball.radius;
@@ -287,6 +324,9 @@ function checkWall(ball) {
     }
 }
 
+/**
+ * Kiểm tra bóng va chạm với thanh đỡ.
+ */
 function checkBar(ball) {
     let ballLeft = ball.x - ball.radius;
     let ballRight = ball.x + ball.radius;
@@ -305,6 +345,9 @@ function checkBar(ball) {
     }
 }
 
+/**
+ * Kiểm tra bóng va chạm với gạch.
+ */
 function checkBlock(ball) {
     for (let i = 0; i < blocks.length; i++) {
         let block = blocks[i];
@@ -346,6 +389,9 @@ function checkBlock(ball) {
     }
 }
 
+/**
+ *Xử lý khi bóng rơi khỏi màn hình.
+ */
 function moveBalls() {
     for (let i = balls.length - 1; i >= 0; i--) {
         let ball = balls[i];
@@ -374,6 +420,9 @@ function moveBalls() {
     }
 }
 
+/**
+ * Kiểm tra đã phá hết gạch chưa và chuyển sang level tiếp theo.
+ */
 function checkWin() {
     let remaining = 0;
 
@@ -383,7 +432,9 @@ function checkWin() {
         }
     }
 
-    if (remaining > 0) return;
+    if (remaining > 0) {
+        return;
+    }
 
     gameStarted = false;
     gifts = [];
@@ -407,10 +458,14 @@ function checkWin() {
     }
 }
 
+/**
+ * Vẽ toàn bộ gạch lên Canvas, Level 4 xuất hiện thêm gạch có x1 x2 x3 lần đập.
+ *
+ */
 function drawBlocks() {
-    ctx.font = "bold 13px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
+    gameContext.font = "bold 13px Arial";
+    gameContext.textAlign = "center";
+    gameContext.textBaseline = "middle";
 
     for (let i = 0; i < blocks.length; i++) {
         let block = blocks[i];
@@ -427,17 +482,17 @@ function drawBlocks() {
 
         if (currentLevel === 4) {
             if (block.hit === 1) {
-                ctx.fillStyle = "lightgray";
+                gameContext.fillStyle = "lightgray";
             } else if (block.hit === 2) {
-                ctx.fillStyle = "gold";
+                gameContext.fillStyle = "gold";
             } else {
-                ctx.fillStyle = "firebrick";
+                gameContext.fillStyle = "firebrick";
             }
         } else {
-            ctx.fillStyle = block.color;
+            gameContext.fillStyle = block.color;
         }
 
-        ctx.fillRect(
+        gameContext.fillRect(
             x,
             block.y,
             blockWidth,
@@ -446,12 +501,12 @@ function drawBlocks() {
 
         if (currentLevel === 4) {
             if (block.hit === 3) {
-                ctx.fillStyle = "white";
+                gameContext.fillStyle = "white";
             } else {
-                ctx.fillStyle = "black";
+                gameContext.fillStyle = "black";
             }
 
-            ctx.fillText(
+            gameContext.fillText(
                 "x" + block.hit,
                 x + blockWidth / 2,
                 block.y + blockHeight / 2
@@ -460,13 +515,16 @@ function drawBlocks() {
     }
 }
 
+/**
+ * Vẽ tất cả bóng lên Canvas.
+ */
 function drawBalls() {
-    ctx.fillStyle = "white";
+    gameContext.fillStyle = "white";
 
     for (let i = 0; i < balls.length; i++) {
         let ball = balls[i];
 
-        ctx.fillRect(
+        gameContext.fillRect(
             ball.x - ball.radius,
             ball.y - ball.radius,
             ball.radius * 2,
@@ -475,10 +533,13 @@ function drawBalls() {
     }
 }
 
+/**
+ * Vẽ thanh đỡ lên Canvas.
+ */
 function drawBar() {
-    ctx.fillStyle = "white";
+    gameContext.fillStyle = "white";
 
-    ctx.fillRect(
+    gameContext.fillRect(
         bar.x,
         bar.y,
         bar.width,
@@ -486,26 +547,29 @@ function drawBar() {
     );
 }
 
+/**
+ * Vẽ quà x2 và x3 lên Canvas.
+ */
 function drawGifts() {
-    ctx.font = "bold 14px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
+    gameContext.font = "bold 14px Arial";
+    gameContext.textAlign = "center";
+    gameContext.textBaseline = "middle";
 
     for (let i = 0; i < gifts.length; i++) {
         let gift = gifts[i];
 
-        ctx.fillStyle = "gold";
+        gameContext.fillStyle = "gold";
 
-        ctx.fillRect(
+        gameContext.fillRect(
             gift.x,
             gift.y,
             gift.width,
             gift.height
         );
 
-        ctx.fillStyle = "black";
+        gameContext.fillStyle = "black";
 
-        ctx.fillText(
+        gameContext.fillText(
             "x" + gift.type,
             gift.x + gift.width / 2,
             gift.y + gift.height / 2
@@ -513,9 +577,12 @@ function drawGifts() {
     }
 }
 
+/**
+ * Vẽ lại toàn bộ màn hình game.
+ */
 function drawGame() {
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, game.width, game.height);
+    gameContext.fillStyle = "black";
+    gameContext.fillRect(0, 0, game.width, game.height);
 
     drawBlocks();
     drawGifts();
@@ -523,8 +590,11 @@ function drawGame() {
     drawBar();
 }
 
+/**
+ *Cập nhật và vẽ game liên tục.
+ */
 function gameLoop() {
-    if (gameStarted === true && isPaused === false) {
+    if (gameStarted === true) {
         moveBlocks();
         moveBalls();
         moveGifts();
@@ -535,21 +605,16 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
+/**
+ * Bắt đầu hoặc tiếp tục trò chơi.
+ */
 function startGame() {
     gameStarted = true;
-    isPaused = false;
 }
 
-playBtn.addEventListener("click", function() {
+playButton.addEventListener("click", function() {
     startGame();
 });
-
-pauseBtn.addEventListener("click", function() {
-    if (gameStarted === true) {
-        isPaused = true;
-    }
-});
-
 document.addEventListener("keydown", function(event) {
     if (event.code === "Space") {
         event.preventDefault();
@@ -568,7 +633,7 @@ for (let i = 0; i < levelButtons.length; i++) {
 }
 
 game.addEventListener("mousemove", function(event) {
-    if (gameStarted === false || isPaused === true) {
+    if (gameStarted === false) {
         return;
     }
 
