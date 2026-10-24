@@ -122,19 +122,19 @@ function chooseLevel(level) {
     } else if (level === 2) {
         blockRow = 7;
         ballSpeed = 2;
-        bar.width = 105;
+        bar.width = 110;
     } else if (level === 3) {
         blockRow = 8;
         ballSpeed = 3;
-        bar.width = 95;
+        bar.width = 110;
     } else if (level === 4) {
         blockRow = 9;
         ballSpeed = 3;
-        bar.width = 85;
+        bar.width = 110;
     } else if (level === 5) {
         blockRow = 10;
         ballSpeed = 4;
-        bar.width = 75;
+        bar.width = 110;
     }
 
     for (let i = 0; i < levelButtons.length; i++) {
